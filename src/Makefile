@@ -1,5 +1,5 @@
-build: tema2.o upload.o tracker.o download.o tags.o
-	mpicxx -o tema2 tema2.o upload.o tracker.o download.o tags.o -pthread -Wall
+build: tema2.o upload.o tracker.o download.o constants.o
+	mpicxx -o tema2 tema2.o upload.o tracker.o download.o constants.o -pthread -Wall -g
 
 tema2.o: tema2.cpp
 	mpicxx -o tema2.o -c tema2.cpp -pthread -Wall
@@ -13,8 +13,8 @@ tracker.o: tracker.cpp
 download.o: download.cpp
 	mpicxx -o download.o -c download.cpp -pthread -Wall
 
-tags.o: tags.cpp
-	mpicxx -o tags.o -c tags.cpp -pthread -Wall
+constants.o: constants.cpp
+	mpicxx -o constants.o -c constants.cpp -pthread -Wall
 	
 clean:
-	rm tema2 tema2.o upload.o
+	rm tema2 tema2.o upload.o tracker.o download.o constants.o

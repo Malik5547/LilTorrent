@@ -8,10 +8,7 @@
 #include <sstream>
 #include <stdexcept>
 
-#include "tags.h"
-
-#define DEBUG 1
-
+#include "constants.h"
 
 #define MAX_FILENAME 15
 #define MAX_BUFFER_SIZE 1024 * 16

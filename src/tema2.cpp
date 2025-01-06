@@ -26,6 +26,8 @@ void *download_thread_func(void *arg)
         std::cout << "Rank " << peer_data->rank << " downloading file " << filename << std::endl;
 
         set<int> seedsAndPeers = request_file_peers(filename, peer_data->rank, TRACKER_RANK);
+        vector<string> segHashes = request_file_segHashes(filename, peer_data->rank, TRACKER_RANK);
+
 
         if (DEBUG)
         {
@@ -100,6 +102,24 @@ void tracker(int numtasks, int rank)
             send_file_peers(swarm, filename, status.MPI_SOURCE);
 
             swarm.files[filename].seedsAndPeers.insert(status.MPI_SOURCE);
+            break;
+        }
+        case GET_FILE_SEGHASHES_TAG:
+        {
+            buffer.resize(buffer_size);
+
+            MPI_Recv(buffer.data(), buffer.size(), MPI_CHAR, status.MPI_SOURCE, status.MPI_TAG, MPI_COMM_WORLD, &status);
+
+            string filename(buffer.begin(), buffer.end());
+
+            // Remove the NULL terminator
+            if (!filename.empty() && filename[filename.size() - 1] == '\0')
+            {
+                filename.pop_back();
+            }
+
+            send_file_segHashes(swarm, filename, status.MPI_SOURCE);
+
             break;
         }
         case DOWNLOAD_END_TAG:

@@ -87,3 +87,21 @@ void send_file_peers(const Swarm &swarm, const std::string &filename, int rank)
     MPI_Send(&peer_count, 1, MPI_INT, rank, GET_FILE_PEERS_TAG, MPI_COMM_WORLD);
     MPI_Send(peers_vector.data(), peers_vector.size(), MPI_INT, rank, GET_FILE_PEERS_TAG, MPI_COMM_WORLD);
 }
+
+void send_file_segHashes(const Swarm& swarm, const string& filename, int rank){
+    if(swarm.files.find(filename) == swarm.files.end()){
+        std::cout << "Filename: " << filename << " not found" << std::endl;
+    }
+
+    std::vector<string> segHashes = swarm.files.at(filename).segHashes;
+    int segHash_count = segHashes.size();
+
+    MPI_Send(&segHash_count, 1, MPI_INT, rank, GET_FILE_SEGHASHES_TAG, MPI_COMM_WORLD);
+
+    std::string buffer;
+    for(const auto& hash : segHashes){
+        buffer += hash;
+    }
+
+    MPI_Send((void*) buffer.c_str(), buffer.size(), MPI_CHAR, rank, GET_FILE_SEGHASHES_TAG, MPI_COMM_WORLD);
+}
