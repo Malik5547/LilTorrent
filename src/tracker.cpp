@@ -35,7 +35,7 @@ void get_swarm_data(Swarm &swarm, int numclients)
             std::cout << "Received file3 from " << status.MPI_SOURCE << std::endl;
         }
 
-        swarm.files[held_file.filename].seedsAndPeers.push_back(status.MPI_SOURCE);
+        swarm.files[held_file.filename].seedsAndPeers.insert(status.MPI_SOURCE);
 
         if (swarm.files[held_file.filename].segHashes.empty())
         {
@@ -69,4 +69,21 @@ void send_start_message(int rank, int tracker_rank)
     char data[MAX_BUFFER_SIZE] = "START";
 
     MPI_Send(data, strlen(data) + 1, MPI_CHAR, rank, START_DOWNLOAD_TAG, MPI_COMM_WORLD);
+}
+
+void send_file_peers(const Swarm &swarm, const std::string &filename, int rank)
+{
+    
+    if (swarm.files.find(filename) == swarm.files.end())
+    {
+        std::cout << "Filename: " << filename << " not found" << std::endl;
+    }
+
+    std::set<int> peers = swarm.files.at(filename).seedsAndPeers;
+    std::vector<int> peers_vector(peers.begin(), peers.end());
+
+    int peer_count = peers.size();
+
+    MPI_Send(&peer_count, 1, MPI_INT, rank, GET_FILE_PEERS_TAG, MPI_COMM_WORLD);
+    MPI_Send(peers_vector.data(), peers_vector.size(), MPI_INT, rank, GET_FILE_PEERS_TAG, MPI_COMM_WORLD);
 }

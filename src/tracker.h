@@ -2,15 +2,17 @@
 
 #include <mpi.h>
 #include <vector>
+#include <set>  
 
 #include "upload.h"
+#include "tags.h"
 
 
 using namespace std;
 
 struct FileData
 {
-    vector<int> seedsAndPeers;
+    set<int> seedsAndPeers;
     vector<string> segHashes;
 };
 
@@ -24,3 +26,4 @@ struct Swarm
 void get_swarm_data(Swarm& swarm, int numtasks);
 
 void send_start_message(int rank, int tracker_rank);
+void send_file_peers(const Swarm& swarm, const string& filename, int rank);

@@ -8,17 +8,23 @@
 #include <sstream>
 #include <stdexcept>
 
+#include "tags.h"
+
 #define DEBUG 1
 
 
 #define MAX_FILENAME 15
-#define MAX_BUFFER_SIZE 1024
-
-#define START_DOWNLOAD_TAG 1
+#define MAX_BUFFER_SIZE 1024 * 16
 
 struct HeldFile {
     std::string filename;
     std::vector<std::string> segHashes;
+};
+
+struct PeerData {
+    int rank;
+    std::vector<HeldFile> held_files;
+    std::vector<std::string> wanted_files;
 };
 
 void get_held_and_wanted_files(std::vector<HeldFile>& held_files, std::vector<std::string>& wanted_files, int rank);

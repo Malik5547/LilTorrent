@@ -46,6 +46,7 @@ void get_held_and_wanted_files(std::vector<HeldFile>& held_files, vector<string>
     for (int i = 0; i < num_wanted_files; ++i) {
         std::string wanted_file;
         file >> wanted_file;
+
         wanted_files.push_back(wanted_file);
     }
 
