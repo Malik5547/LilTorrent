@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include "upload.h"
+#include "tracker.h"
 
 #define TRACKER_RANK 0
 #define MAX_FILES 10
@@ -22,9 +23,19 @@ void *upload_thread_func(void *arg)
 {
     int rank = *(int*) arg;
 
-    std::vector<HeldFile> held_files = get_held_files(rank);
+    std::vector<HeldFile> held_files;
+    std::vector<std::string> wanted_files;
+    
+    get_held_and_wanted_files(held_files, wanted_files, rank);
+    // print_held_files(held_files);
 
-    print_held_files(held_files);
+    if (DEBUG){
+        std::cout << "Rank " << rank << " has " << wanted_files.size() << " wanted files\n";
+    }
+
+    send_held_files_data(held_files, rank, TRACKER_RANK);
+
+    wait_start_message(rank, TRACKER_RANK);
 
     std::cout << "Rank " << rank << " finished uploading\n";
 
@@ -32,7 +43,14 @@ void *upload_thread_func(void *arg)
 }
 
 void tracker(int numtasks, int rank) {
+    Swarm swarm;
+    std::vector<int> finished_clients;
 
+    get_swarm_data(swarm, numtasks - 1);
+
+    for (int i = 1; i < numtasks; ++i) {
+        send_start_message(i, rank);
+    }
 }
 
 void peer(int numtasks, int rank) {
