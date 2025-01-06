@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "upload.h"
+
 #define TRACKER_RANK 0
 #define MAX_FILES 10
 #define MAX_FILENAME 15
@@ -11,7 +13,7 @@
 
 void *download_thread_func(void *arg)
 {
-    int rank = *(int*) arg;
+    // int rank = *(int*) arg;
 
     return NULL;
 }
@@ -19,6 +21,12 @@ void *download_thread_func(void *arg)
 void *upload_thread_func(void *arg)
 {
     int rank = *(int*) arg;
+
+    std::vector<HeldFile> held_files = get_held_files(rank);
+
+    print_held_files(held_files);
+
+    std::cout << "Rank " << rank << " finished uploading\n";
 
     return NULL;
 }
