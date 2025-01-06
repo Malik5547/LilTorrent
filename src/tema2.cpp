@@ -14,7 +14,11 @@
 
 void *download_thread_func(void *arg)
 {
-    // int rank = *(int*) arg;
+    int rank = *(int*) arg;
+
+    wait_start_message(rank, TRACKER_RANK);
+
+    std::cout << "Rank " << rank << " started downloading\n";
 
     return NULL;
 }
@@ -35,7 +39,7 @@ void *upload_thread_func(void *arg)
 
     send_held_files_data(held_files, rank, TRACKER_RANK);
 
-    wait_start_message(rank, TRACKER_RANK);
+    // wait_start_message(rank, TRACKER_RANK);
 
     std::cout << "Rank " << rank << " finished uploading\n";
 

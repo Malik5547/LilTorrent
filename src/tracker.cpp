@@ -66,7 +66,7 @@ void get_swarm_data(Swarm &swarm, int numclients)
 
 void send_start_message(int rank, int tracker_rank)
 {
-    char data[MAX_BUFFER_SIZE] = "start";
+    char data[MAX_BUFFER_SIZE] = "START";
 
-    MPI_Send(data, strlen(data) + 1, MPI_CHAR, rank, 0, MPI_COMM_WORLD);
+    MPI_Send(data, strlen(data) + 1, MPI_CHAR, rank, START_DOWNLOAD_TAG, MPI_COMM_WORLD);
 }

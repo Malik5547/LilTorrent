@@ -14,6 +14,8 @@
 #define MAX_FILENAME 15
 #define MAX_BUFFER_SIZE 1024
 
+#define START_DOWNLOAD_TAG 1
+
 struct HeldFile {
     std::string filename;
     std::vector<std::string> segHashes;

@@ -102,7 +102,7 @@ void wait_start_message(int rank, int tracker_rank){
     MPI_Status status;
     char data[MAX_BUFFER_SIZE];
 
-    MPI_Recv(data, MAX_BUFFER_SIZE, MPI_CHAR, tracker_rank, 0, MPI_COMM_WORLD, &status);
+    MPI_Recv(data, MAX_BUFFER_SIZE, MPI_CHAR, tracker_rank, START_DOWNLOAD_TAG, MPI_COMM_WORLD, &status);
 }
 
 void print_held_files(const std::vector<HeldFile>& held_files) {
