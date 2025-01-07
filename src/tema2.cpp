@@ -21,6 +21,8 @@ void *download_thread_func(void *arg)
 
     std::cout << "Rank " << peer_data->rank << " started downloading\n";
 
+    int segments_till_update = 10;
+
     for (auto filename : peer_data->wanted_files)
     {
         std::cout << "Rank " << peer_data->rank << " downloading file " << filename << std::endl;
@@ -36,11 +38,13 @@ void *download_thread_func(void *arg)
             peer_data->downloaded_files[filename][segHashes[i]] = status;
         }
 
+        vector<int> sortedPeers = sortPeersByScore(seedsAndPeers);
+
         for (auto segHash : segHashes)
         {
             while (peer_data->downloaded_files[filename][segHash].status == false)
             {
-                for (auto peer : seedsAndPeers)
+                for (auto peer : sortedPeers)
                 {
                     if (peer == peer_data->rank)
                     {
@@ -50,6 +54,15 @@ void *download_thread_func(void *arg)
                     if (request_file_seg(peer, filename, segHash, peer_data->rank))
                     {
                         peer_data->downloaded_files[filename][segHash].status = true;
+
+                        if (segments_till_update-- == 0)
+                        {
+                            seedsAndPeers = request_file_peers(filename, peer_data->rank, TRACKER_RANK);
+                            sortedPeers = sortPeersByScore(seedsAndPeers);
+
+                            segments_till_update = 10;
+                        } 
+
                         break;
                     }
                 }
@@ -99,11 +112,17 @@ void *upload_thread_func(void *arg)
         vector<char> buffer;
         int buffer_size;
 
+        int peerLoad = 0;
+        int totalRequests = 0;
+        int successfulRequests = 0;
+
         MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_SOURCE, MPI_COMM_WORLD, &status);
 
         if ((status.MPI_TAG & UPLOAD_TAGS) != 0)
         {
             MPI_Recv(&buffer_size, 1, MPI_INT, status.MPI_SOURCE, status.MPI_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+            peerLoad++;
         }
         else
         {
@@ -114,6 +133,8 @@ void *upload_thread_func(void *arg)
         {
         case GET_FILE_SEG_TAG:
         {
+            totalRequests++;
+
             buffer.resize(buffer_size);
             MPI_Recv(buffer.data(), buffer.size(), MPI_CHAR, status.MPI_SOURCE, FILENAME_TAG, MPI_COMM_WORLD, &status);
 
@@ -142,6 +163,7 @@ void *upload_thread_func(void *arg)
             if (has_file_seg(peer_data, filename, segHash))
             {
                 response = SUCCESS_MESSAGE;
+                successfulRequests++;
             }
             else
             {
@@ -149,6 +171,15 @@ void *upload_thread_func(void *arg)
             }
 
             MPI_Send(response.c_str(), response.size(), MPI_CHAR, status.MPI_SOURCE, RET_FILE_SEG_TAG, MPI_COMM_WORLD);
+
+            break;
+        }
+        case GET_PEER_SCORE_TAG:
+        {
+            double peerReliability = (double)successfulRequests / totalRequests;
+            double score = 1.0 / (peerLoad + 1) + 0.5 * peerReliability;
+
+            MPI_Send(&score, 1, MPI_DOUBLE, status.MPI_SOURCE, RET_PEER_SCORE_TAG, MPI_COMM_WORLD);
 
             break;
         }

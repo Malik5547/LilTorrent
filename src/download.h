@@ -20,3 +20,7 @@ void send_file_download_end_message(int rank, int tracker_rank);
 void send_client_download_end_message(int rank, int tracker_rank);
 
 void save_file(const std::map<std::string, std::map<std::string, HashStatus>>& downloaded_files, const std::string& filename, int rank);
+
+vector<int> sortPeersByScore(set<int>& seedsAndPeers);
+
+double request_peer_score(int peer_rank);

@@ -121,3 +121,37 @@ void save_file(const map<string, map<string, HashStatus>> &downloaded_files, con
 
     file.close();
 }
+
+vector<int> sortPeersByScore(set<int> &seedsAndPeers)
+{
+    vector<pair<int, double>> peer_scores;
+
+    for (int peer : seedsAndPeers)
+    {
+        peer_scores.push_back(make_pair(peer, request_peer_score(peer)));
+    }
+
+    sort(peer_scores.begin(), peer_scores.end(), [](const pair<int, double> &a, const pair<int, double> &b) {
+        return a.second > b.second;
+    });
+
+    vector<int> sortedPeers;
+
+    for (const auto &peer_score : peer_scores)
+    {
+        sortedPeers.push_back(peer_score.first);
+    }
+
+    return sortedPeers;
+}
+
+double request_peer_score(int peer)
+{
+    MPI_Status status;
+    double score;
+
+    MPI_Send(NULL, 0, MPI_INT, peer, GET_PEER_SCORE_TAG, MPI_COMM_WORLD);
+    MPI_Recv(&score, 1, MPI_DOUBLE, peer, RET_PEER_SCORE_TAG, MPI_COMM_WORLD, &status);
+
+    return score;
+}
