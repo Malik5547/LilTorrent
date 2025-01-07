@@ -1,6 +1,7 @@
 #include "download.h"
 
-set<int> request_file_peers(const std::string& filename, int rank, int tracker_rank){
+set<int> request_file_peers(const std::string &filename, int rank, int tracker_rank)
+{
     MPI_Status status;
     int peer_count;
     vector<int> peers;
@@ -8,8 +9,8 @@ set<int> request_file_peers(const std::string& filename, int rank, int tracker_r
     int filename_size = filename.size();
 
     MPI_Send(&filename_size, 1, MPI_INT, tracker_rank, GET_FILE_PEERS_TAG, MPI_COMM_WORLD);
-    MPI_Send((void*) filename.c_str(), filename_size, MPI_CHAR, tracker_rank, GET_FILE_PEERS_TAG, MPI_COMM_WORLD);
-   
+    MPI_Send((void *)filename.c_str(), filename_size, MPI_CHAR, tracker_rank, GET_FILE_PEERS_TAG, MPI_COMM_WORLD);
+
     MPI_Recv(&peer_count, 1, MPI_INT, tracker_rank, GET_FILE_PEERS_TAG, MPI_COMM_WORLD, &status);
     peers.resize(peer_count);
 
@@ -18,7 +19,8 @@ set<int> request_file_peers(const std::string& filename, int rank, int tracker_r
     return set<int>(peers.begin(), peers.end());
 }
 
-vector<string> request_file_segHashes(const std::string& filename, int rank, int tracker_rank){
+vector<string> request_file_segHashes(const std::string &filename, int rank, int tracker_rank)
+{
     MPI_Status status;
     int segHash_count;
     vector<string> segHashes;
@@ -27,20 +29,22 @@ vector<string> request_file_segHashes(const std::string& filename, int rank, int
     int filename_size = filename.size();
 
     MPI_Send(&filename_size, 1, MPI_INT, tracker_rank, GET_FILE_SEGHASHES_TAG, MPI_COMM_WORLD);
-    MPI_Send((void*) filename.c_str(), filename_size, MPI_CHAR, tracker_rank, GET_FILE_SEGHASHES_TAG, MPI_COMM_WORLD);
+    MPI_Send((void *)filename.c_str(), filename_size, MPI_CHAR, tracker_rank, GET_FILE_SEGHASHES_TAG, MPI_COMM_WORLD);
 
     MPI_Recv(&segHash_count, 1, MPI_INT, tracker_rank, GET_FILE_SEGHASHES_TAG, MPI_COMM_WORLD, &status);
     segHashes.resize(segHash_count);
 
     buffer.resize(segHash_count * HASH_LENGTH);
 
-    MPI_Recv((void*) buffer.data(), segHash_count * HASH_LENGTH, MPI_CHAR, tracker_rank, GET_FILE_SEGHASHES_TAG, MPI_COMM_WORLD, &status);
+    MPI_Recv((void *)buffer.data(), segHash_count * HASH_LENGTH, MPI_CHAR, tracker_rank, GET_FILE_SEGHASHES_TAG, MPI_COMM_WORLD, &status);
 
-    for(int i = 0; i < segHash_count; i++){
+    for (int i = 0; i < segHash_count; i++)
+    {
         segHashes[i] = buffer.substr(i * HASH_LENGTH, HASH_LENGTH);
     }
 
-    if (DEBUG){
+    if (DEBUG)
+    {
         cout << "Received " << segHash_count << " hashes for file " << filename << endl;
         cout << "First hash: " << segHashes[0] << endl;
         cout << "Last hash: " << segHashes[segHash_count - 1] << endl;
@@ -49,6 +53,44 @@ vector<string> request_file_segHashes(const std::string& filename, int rank, int
     return segHashes;
 }
 
-void send_download_end_message(int rank, int tracker_rank){
-    MPI_Send(NULL, 0, MPI_INT, tracker_rank, DOWNLOAD_END_TAG, MPI_COMM_WORLD);
+bool request_file_seg(int peer_rank, const std::string &filename, const std::string &segHash, int rank)
+{
+    MPI_Status status;
+    vector<char> buffer;
+
+    int filename_size = filename.size();
+    int segHash_size = HASH_LENGTH;
+
+    MPI_Send(&filename_size, 1, MPI_INT, peer_rank, GET_FILE_SEG_TAG, MPI_COMM_WORLD);
+    MPI_Send((void *)filename.c_str(), filename_size, MPI_CHAR, peer_rank, FILENAME_TAG, MPI_COMM_WORLD);
+
+    MPI_Send((void *)segHash.c_str(), segHash_size, MPI_CHAR, peer_rank, HASH_TAG, MPI_COMM_WORLD);
+
+    buffer.resize(MAX_BUFFER_SIZE);
+
+    MPI_Recv(buffer.data(), MAX_BUFFER_SIZE, MPI_CHAR, peer_rank, RET_FILE_SEG_TAG, MPI_COMM_WORLD, &status);
+
+    // Resize buffer to actual size
+    buffer.resize(status._ucount);
+
+    string response(buffer.begin(), buffer.end());
+
+    if (response == SUCCESS_MESSAGE)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+void send_file_download_end_message(int rank, int tracker_rank)
+{
+    MPI_Send(NULL, 0, MPI_INT, tracker_rank, FILE_DOWNLOAD_END_TAG, MPI_COMM_WORLD);
+}
+
+void send_client_download_end_message(int rank, int tracker_rank)
+{
+    MPI_Send(NULL, 0, MPI_INT, tracker_rank, CLIENT_DOWNLOAD_END_TAG, MPI_COMM_WORLD);
 }

@@ -28,6 +28,33 @@ void *download_thread_func(void *arg)
         set<int> seedsAndPeers = request_file_peers(filename, peer_data->rank, TRACKER_RANK);
         vector<string> segHashes = request_file_segHashes(filename, peer_data->rank, TRACKER_RANK);
 
+        // Initialize the downloaded_files map
+        for (unsigned long int i = 0; i < segHashes.size(); i++)
+        {
+            HashStatus status{i, false};
+
+            peer_data->downloaded_files[filename][segHashes[i]] = status;
+        }
+
+        for (auto segHash : segHashes)
+        {
+            while (peer_data->downloaded_files[filename][segHash].status == false)
+            {
+                for (auto peer : seedsAndPeers)
+                {
+                    if (peer == peer_data->rank)
+                    {
+                        continue;
+                    }
+
+                    if (request_file_seg(peer, filename, segHash, peer_data->rank))
+                    {
+                        peer_data->downloaded_files[filename][segHash].status = true;
+                        break;
+                    }
+                }
+            }
+        }
 
         if (DEBUG)
         {
@@ -39,9 +66,11 @@ void *download_thread_func(void *arg)
 
             std::cout << std::endl;
         }
+
+        send_file_download_end_message(peer_data->rank, TRACKER_RANK);
     }
 
-    send_download_end_message(peer_data->rank, TRACKER_RANK);
+    send_client_download_end_message(peer_data->rank, TRACKER_RANK);
 
     return NULL;
 }
@@ -59,7 +88,70 @@ void *upload_thread_func(void *arg)
 
     send_held_files_data(peer_data->held_files, rank, TRACKER_RANK);
 
-    std::cout << "Rank " << peer_data->rank << " finished uploading\n";
+    while (true)
+    {
+        MPI_Status status;
+        vector<char> buffer;
+        int buffer_size;
+
+        MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_SOURCE, MPI_COMM_WORLD, &status);
+
+        if ((status.MPI_TAG & UPLOAD_TAGS) != 0)
+        {
+            MPI_Recv(&buffer_size, 1, MPI_INT, status.MPI_SOURCE, status.MPI_TAG, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        }
+        else
+        {
+            continue;
+        }
+
+        switch (status.MPI_TAG)
+        {
+        case GET_FILE_SEG_TAG:
+        {
+            buffer.resize(buffer_size);
+            MPI_Recv(buffer.data(), buffer.size(), MPI_CHAR, status.MPI_SOURCE, FILENAME_TAG, MPI_COMM_WORLD, &status);
+
+            string filename(buffer.begin(), buffer.end());
+
+            // Remove the NULL terminator
+            if (!filename.empty() && filename[filename.size() - 1] == '\0')
+            {
+                filename.pop_back();
+            }
+
+            buffer.resize(HASH_LENGTH);
+
+            MPI_Recv(buffer.data(), HASH_LENGTH, MPI_CHAR, status.MPI_SOURCE, HASH_TAG, MPI_COMM_WORLD, &status);
+
+            string segHash(buffer.begin(), buffer.end());
+
+            // Remove the NULL terminator
+            if (!segHash.empty() && segHash[segHash.size() - 1] == '\0')
+            {
+                segHash.pop_back();
+            }
+
+            string response;
+
+            if (has_file_seg(peer_data, filename, segHash))
+            {
+                response = SUCCESS_MESSAGE;
+            }
+            else
+            {
+                response = MISSING_MESSAGE;
+            }
+
+            MPI_Send(response.c_str(), response.size(), MPI_CHAR, status.MPI_SOURCE, RET_FILE_SEG_TAG, MPI_COMM_WORLD);
+
+            break;
+        }
+        case END_UPLOAD_TAG:
+            std::cout << "Rank " << peer_data->rank << " finished uploading\n";
+            return NULL;
+        }
+    }
 
     return NULL;
 }
@@ -122,12 +214,20 @@ void tracker(int numtasks, int rank)
 
             break;
         }
-        case DOWNLOAD_END_TAG:
+        case FILE_DOWNLOAD_END_TAG:
+            // Client becomes seed, but it's already in peer list
+            break;
+        case CLIENT_DOWNLOAD_END_TAG:
             finished_clients.push_back(status.MPI_SOURCE);
             break;
         default:
             break;
         }
+    }
+
+    for (int i = 1; i < numtasks; ++i)
+    {
+        send_end_upload_message(i, rank);
     }
 }
 
