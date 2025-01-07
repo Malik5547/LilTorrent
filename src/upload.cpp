@@ -9,7 +9,7 @@ void get_held_and_wanted_files(std::vector<HeldFile> &held_files, vector<string>
 
     if (DEBUG)
     {
-        filename_stream << "../checker/tests/test2/";
+        filename_stream << "../checker/tests/test1/";
     }
 
     filename_stream << "in" << rank << ".txt";

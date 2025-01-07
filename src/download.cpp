@@ -94,3 +94,30 @@ void send_client_download_end_message(int rank, int tracker_rank)
 {
     MPI_Send(NULL, 0, MPI_INT, tracker_rank, CLIENT_DOWNLOAD_END_TAG, MPI_COMM_WORLD);
 }
+
+void save_file(const map<string, map<string, HashStatus>> &downloaded_files, const string &filename, int rank)
+{
+    ofstream file;
+    string file_path = "client" + to_string(rank) + "_" + filename;
+
+    file.open(file_path, ios::binary);
+
+    if (!file.is_open())
+    {
+        throw runtime_error("Could not open file for writing");
+    }
+
+    // Sort the map by index
+    vector<pair<string, HashStatus>> sorted_downloaded_files(downloaded_files.at(filename).begin(), downloaded_files.at(filename).end());
+
+    sort(sorted_downloaded_files.begin(), sorted_downloaded_files.end(), [](const pair<string, HashStatus> &a, const pair<string, HashStatus> &b) {
+        return a.second.index < b.second.index;
+    });
+
+    for (const auto &seg : sorted_downloaded_files)
+    {
+        file << seg.first << endl;
+    }  
+
+    file.close();
+}

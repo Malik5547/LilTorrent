@@ -3,7 +3,9 @@
 #include <mpi.h>
 #include <vector>
 #include <set>
+#include <algorithm>
 
+#include "upload.h"
 #include "constants.h"
 
 
@@ -16,3 +18,5 @@ bool request_file_seg(int peer_rank, const std::string& filename, const std::str
 
 void send_file_download_end_message(int rank, int tracker_rank);
 void send_client_download_end_message(int rank, int tracker_rank);
+
+void save_file(const std::map<std::string, std::map<std::string, HashStatus>>& downloaded_files, const std::string& filename, int rank);

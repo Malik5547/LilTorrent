@@ -68,6 +68,11 @@ void *download_thread_func(void *arg)
         }
 
         send_file_download_end_message(peer_data->rank, TRACKER_RANK);
+
+        if (SAVE_RESULTS)
+        {
+            save_file(peer_data->downloaded_files, filename, peer_data->rank);
+        }
     }
 
     send_client_download_end_message(peer_data->rank, TRACKER_RANK);

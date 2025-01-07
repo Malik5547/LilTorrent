@@ -23,4 +23,5 @@
 #define MAX_BUFFER_SIZE 1024 * 16
 #define MAX_FILENAME 15
 
-#define DEBUG 1
+#define DEBUG 0
+#define SAVE_RESULTS 1
