@@ -1,0 +1,16 @@
+
+1. Mai intai in threadurile de upload se citeste input data si se salveaza in PeerData care e comun si pentru download thread
+2. Datele despre fisierele detinute se trimite la tracker; 
+    Threadurile de upload incep sa astepte mesaje / cereri
+3. Cand trackerul are datele de la fiecare client, trimite mesaj la download threaduri sa inceapa downloadul
+5. Download threads incep sa descarce fiecare fisier de care au nevoie
+    1. Mai intai cer peers si lista de hashuri de la tracker
+    2. Sorteaza peers dupa scor
+    3. Incepe sa descarce fiecare segment, daca nu are deja segmentul
+    4. La fiecare 10 segmente descarcate, actualizeaza lista de peers si le sorteaza dupa scor
+5. Cand termina de descarcat un fisier, trimite mesaj la tracker ca a terminat
+6. Cand toate download threads au terminat, se trimite mesaje la upload threads sa se opreasca
+
+
+Trimiterea datelor / mesajelor se face prin taguri diferite pentru fiecare tip de request.
+In tracker si upload threads se afla bucrle in care se proceseaza requesturile
